@@ -77,5 +77,48 @@ suite('Functional Tests', function() {
         assert.deepEqual(res.body, { error: 'required field(s) missing' });
         done();
       });
-   });
+  });
+
+  test('View issues on a project', async function() {
+    const project = 'test-project-xyz';
+    const issues = [
+      { issue_title: 'xyz1', issue_text: 'xyz text 1', created_by: 'xyz-user-1' },
+      { issue_title: 'xyz2', issue_text: 'xyz text 2', created_by: 'xyz-user-2' }
+    ];
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .post(`/api/issues/${project}`)
+        .send({ ...issues[0] })
+        .end((err, res) => {
+          if (err) reject(err);
+          else resolve();
+        });
+    });
+
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .post(`/api/issues/${project}`)
+        .send({ ...issues[1] })
+        .end((err, res) => {
+          if (err) reject(err);
+          else resolve();
+        });
+    });
+
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .get(`/api/issues/${project}`)
+        .end((err, res) => {
+          assert.isArray(res.body);
+          issues.forEach((issue, index) => {
+            assert.isObject(res.body[index]);
+            assertAllFieldsMatchObj(res.body[index], issue);
+          });
+          resolve();
+        });
+    });
+  });
 });

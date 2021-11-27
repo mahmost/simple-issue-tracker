@@ -6,8 +6,12 @@ module.exports = function apiRoutes(app, issues) {
 
   app.route('/api/issues/:project')
   
-    .get(function (req, res){
+    .get(async function (req, res) {
       const project = req.params.project;
+
+      const data = await issues.find({ project });
+
+      res.json(await data.toArray());
     })
     
     .post(async function (req, res){
@@ -21,7 +25,7 @@ module.exports = function apiRoutes(app, issues) {
       issue.updated_on = issue.created_on;
       issue.open = issue.status_text !== 'closed';
 
-      issues.insertOne({ ...issue, project });
+      await issues.insertOne({ ...issue, project });
 
       if (!issue.assigned_to) issue.assigned_to = '';
       if (!issue.status_text) issue.status_text = '';
