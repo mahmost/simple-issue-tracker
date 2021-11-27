@@ -21,7 +21,7 @@ module.exports = function apiRoutes(app, issues) {
       issue.updated_on = issue.created_on;
       issue.open = issue.status_text !== 'closed';
 
-      issues.insertOne({ ...issue });
+      issues.insertOne({ ...issue, project });
 
       if (!issue.assigned_to) issue.assigned_to = '';
       if (!issue.status_text) issue.status_text = '';
