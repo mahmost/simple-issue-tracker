@@ -25,6 +25,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 connectToDB(async (mongo) => {
   const issues = await mongo.db('issuetracker').collection('issues');
 
+  // reset db for testing
+  console.log('Deleting ...', await issues.deleteMany({}));
+
   //Sample front-end
   app.route('/:project/')
     .get(function(req, res) {
@@ -41,7 +44,7 @@ connectToDB(async (mongo) => {
   fccTestingRoutes(app);
 
   //Routing for API 
-  apiRoutes(app, mongo);
+  apiRoutes(app, issues);
 
   //404 Not Found Middleware
   app.use(function(req, res, next) {
