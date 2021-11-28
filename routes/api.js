@@ -8,8 +8,21 @@ module.exports = function apiRoutes(app, issues) {
   
     .get(async function (req, res) {
       const project = req.params.project;
+      const selector = { project };
 
-      const data = await issues.find({ project });
+      if (Object.keys(req.query).length) {
+        Object.keys(req.query).forEach((field) => {
+          let value;
+          if (field === 'created_on' || field === 'updated_on') value = new Date(req.query[field])
+          if (field === 'open') {
+            value = ['0', 'false', 'off', 'no'].indexOf(req.query[field]) > -1 ? false : true;
+          } else value = req.query[field];
+
+          selector[field] = value;
+        })
+      }
+
+      const data = await issues.find(selector);
 
       res.json(await data.toArray());
     })

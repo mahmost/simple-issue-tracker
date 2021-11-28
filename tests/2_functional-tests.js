@@ -2,7 +2,14 @@ const chaiHttp = require('chai-http');
 const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
+
 const isoDateRegExp = /^\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}.\d{3}Z$/;
+const testIssues = [
+  { issue_title: 'xyz1', issue_text: 'xyz text 1', created_by: 'xyz-user-1' },
+  { issue_title: 'xyz2', issue_text: 'xyz text 2', created_by: 'xyz-user-2', status_text: 'closed' },
+  { issue_title: 'xyz3', issue_text: 'xyz text 3', created_by: 'xyz-user-3', status_text: 'closed' },
+];
+const project2 = 'test-project-xyz';
 
 chai.use(chaiHttp);
 
@@ -80,40 +87,62 @@ suite('Functional Tests', function() {
   });
 
   test('View issues on a project', async function() {
-    const project = 'test-project-xyz';
-    const issues = [
-      { issue_title: 'xyz1', issue_text: 'xyz text 1', created_by: 'xyz-user-1' },
-      { issue_title: 'xyz2', issue_text: 'xyz text 2', created_by: 'xyz-user-2' }
-    ];
-    await new Promise((resolve, reject) => {
-      chai
-        .request(server)
-        .post(`/api/issues/${project}`)
-        .send({ ...issues[0] })
-        .end((err, res) => {
-          if (err) reject(err);
-          else resolve();
-        });
-    });
+    for (const issue of testIssues) {
+      await new Promise((resolve, reject) => {
+        chai
+          .request(server)
+          .post(`/api/issues/${project2}`)
+          .send({ ...issue })
+          .end((err, res) => {
+            if (err) reject(err);
+            else resolve();
+          });
+      });
+    }
 
     await new Promise((resolve, reject) => {
       chai
         .request(server)
-        .post(`/api/issues/${project}`)
-        .send({ ...issues[1] })
-        .end((err, res) => {
-          if (err) reject(err);
-          else resolve();
-        });
-    });
-
-    await new Promise((resolve, reject) => {
-      chai
-        .request(server)
-        .get(`/api/issues/${project}`)
+        .get(`/api/issues/${project2}`)
         .end((err, res) => {
           assert.isArray(res.body);
-          issues.forEach((issue, index) => {
+          assert.equal(res.body.length, testIssues.length);
+          testIssues.forEach((issue, index) => {
+            assertAllFieldsMatchObj(res.body[index], issue);
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('View issues on a project with one filter', async function() {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .get(`/api/issues/${project2}?open=false`)
+        .end((err, res) => {
+          assert.isArray(res.body);
+          const closedIssues = testIssues.filter(issue => issue.status_text === 'closed');
+          assert.equal(res.body.length, closedIssues.length);
+          closedIssues.forEach((issue, index) => {
+            assert.isObject(res.body[index]);
+            assertAllFieldsMatchObj(res.body[index], issue);
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('View issues on a project with multiple filters', async function() {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .get(`/api/issues/${project2}?open=false&created_by=xyz-user-3`)
+        .end((err, res) => {
+          assert.isArray(res.body);
+          const selectedIssues = testIssues.filter(issue => issue.status_text === 'closed' && issue.created_by === 'xyz-user-3');
+          assert.equal(res.body.length, selectedIssues.length);
+          selectedIssues.forEach((issue, index) => {
             assert.isObject(res.body[index]);
             assertAllFieldsMatchObj(res.body[index], issue);
           });
