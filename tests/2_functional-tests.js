@@ -246,4 +246,58 @@ suite('Functional Tests', function() {
         });
     });
   });
+
+  test('Delete an issue', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .delete(`/api/issues/${project2}`)
+        .send({
+          _id: testIssuesInDB[0]._id,
+        })
+        .end((err, res) => {
+          assert.equal(res.status, 200);
+          assert.deepEqual(res.body, {
+            result: 'successfully deleted',
+            _id: testIssuesInDB[0]._id,
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('Delete an issue with an invalid _id', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .delete(`/api/issues/${project2}`)
+        .send({
+          _id: 'some-invalid-id',
+        })
+        .end((err, res) => {
+          assert.equal(res.status, 400);
+          assert.deepEqual(res.body, {
+            error: 'could not delete',
+            _id: 'some-invalid-id',
+          });
+          resolve();
+        });
+    });
+  });
+
+    test('Delete an issue with missing _id', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .delete(`/api/issues/${project2}`)
+        .send({ })
+        .end((err, res) => {
+          assert.equal(res.status, 400);
+          assert.deepEqual(res.body, {
+            error: 'missing _id',
+          });
+          resolve();
+        });
+    });
+  });
 });

@@ -65,9 +65,20 @@ module.exports = function apiRoutes(app, issues) {
       });
     })
     
-    .delete(function (req, res){
+    .delete(async function (req, res){
       const project = req.params.project;
+      const _id = req.body._id;
+
+      if (!_id) return res.status(400).json({ error: 'missing _id'});
       
+      if (!await issues.findOne({ _id })) return res.status(400).json({ error: 'could not delete', _id });
+      
+      await issues.deleteOne({ _id });
+
+      res.json({
+        result: 'successfully deleted',
+        _id,
+      });
     })
     
 };
