@@ -10,6 +10,7 @@ const testIssues = [
   { issue_title: 'xyz3', issue_text: 'xyz text 3', created_by: 'xyz-user-3', status_text: 'closed' },
 ];
 const project2 = 'test-project-xyz';
+let testIssuesInDB;
 
 chai.use(chaiHttp);
 
@@ -110,6 +111,7 @@ suite('Functional Tests', function() {
           testIssues.forEach((issue, index) => {
             assertAllFieldsMatchObj(res.body[index], issue);
           });
+          testIssuesInDB = res.body;
           resolve();
         });
     });
@@ -145,6 +147,100 @@ suite('Functional Tests', function() {
           selectedIssues.forEach((issue, index) => {
             assert.isObject(res.body[index]);
             assertAllFieldsMatchObj(res.body[index], issue);
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('Update one field on an issue', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .put(`/api/issues/${project2}`)
+        .send({
+          _id: testIssuesInDB[0]._id,
+          status_text: 'closed',
+        })
+        .end((err, res) => {
+          assert.equal(res.status, 200);
+          assert.deepEqual(res.body, {
+            result: 'successfully updated',
+            _id: testIssuesInDB[0]._id,
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('Update multiple fields on an issue', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .put(`/api/issues/${project2}`)
+        .send({
+          _id: testIssuesInDB[0]._id,
+          status_text: 'open',
+          assigned_to: 'some-other-user',
+        })
+        .end((err, res) => {
+          assert.equal(res.status, 200);
+          assert.deepEqual(res.body, {
+            result: 'successfully updated',
+            _id: testIssuesInDB[0]._id,
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('Update an issue with missing _id', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .put(`/api/issues/${project2}`)
+        .send({ status_text: 'open' })
+        .end((err, res) => {
+          assert.equal(res.status, 400);
+          assert.deepEqual(res.body, {
+            error: 'missing _id',
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('Update an issue with no fields to update', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .put(`/api/issues/${project2}`)
+        .send({ _id: testIssuesInDB[0]._id })
+        .end((err, res) => {
+          assert.equal(res.status, 400);
+          assert.deepEqual(res.body, {
+            error: 'no update field(s) sent',
+            _id: testIssuesInDB[0]._id,
+          });
+          resolve();
+        });
+    });
+  });
+
+  test('Update an issue with an invalid _id', async function () {
+    await new Promise((resolve, reject) => {
+      chai
+        .request(server)
+        .put(`/api/issues/${project2}`)
+        .send({
+          _id: 'some-invalid-id',
+          status_text: 'closed',
+        })
+        .end((err, res) => {
+          assert.equal(res.status, 400);
+          assert.deepEqual(res.body, {
+            error: 'could not update',
+            _id: 'some-invalid-id',
           });
           resolve();
         });

@@ -19,7 +19,7 @@ module.exports = function apiRoutes(app, issues) {
           } else value = req.query[field];
 
           selector[field] = value;
-        })
+        });
       }
 
       const data = await issues.find(selector);
@@ -46,9 +46,23 @@ module.exports = function apiRoutes(app, issues) {
       res.json(issue);
     })
     
-    .put(function (req, res){
+    .put(async function (req, res){
       const project = req.params.project;
-      
+      const data = { ...req.body };
+      const _id = req.body._id;
+      delete data._id;
+
+      if (!_id) return res.status(400).json({ error: 'missing _id'});
+
+      if (!await issues.findOne({ _id })) return res.status(400).json({ error: 'could not update', _id });
+
+      if (!Object.keys(data).length) return res.status(400).json({ error: 'no update field(s) sent', _id });
+
+      await issues.updateOne({ _id }, { $set: data });
+      res.json({
+        result: 'successfully updated',
+        _id,
+      });
     })
     
     .delete(function (req, res){
