@@ -58,6 +58,13 @@ module.exports = function apiRoutes(app, issues) {
 
       if (!Object.keys(data).length) return res.status(400).json({ error: 'no update field(s) sent', _id });
 
+      // also update open field if status changes
+      if (data.status_text) {
+        const issue = issues.findOne({ _id });
+        const open = data.status_text !== 'closed';
+        if (open !== issue.open) data.open = open;
+      }
+
       await issues.updateOne({ _id }, { $set: data });
       res.json({
         result: 'successfully updated',
