@@ -71,6 +71,8 @@ module.exports = function apiRoutes(app, issues) {
         if (open !== issue.open) data.open = open;
       }
 
+      data.updated_on = new Date().toISOString();
+
       await issues.updateOne({ _id }, { $set: data });
       res.json({
         result: 'successfully updated',
