@@ -27,9 +27,9 @@ function assertAddedFieldsExistWithTypes(obj) {
   assert.isString(obj._id, 'field _id should be a string');
 }
 
-function assertOptionalFieldsDefaultValues(obj) {
-  assert.equal(obj.assigned_to, '', 'field assigned_to should default to an empty string');
-  assert.equal(obj.status_text, '', 'field status_text should default to an empty text');
+function assertOptionalFieldsValues(obj, expected) {
+  assert.equal(obj.assigned_to, expected.assigned_to || '', `field assigned_to should ${expected.assigned_to ? `equal ${expected.assigned_to}` : 'default to an empty string'}`);
+  assert.equal(obj.status_text, expected.status_text || '', `field status_text should ${expected.status_text ? `equal ${expected.status_text}` : 'default to an empty string'}`);
 }
 
 suite('Functional Tests', function() {
@@ -64,7 +64,7 @@ suite('Functional Tests', function() {
       .send(issue)
       .end((err, res) => {
         assertAllFieldsMatchObj(res.body, issue);
-        assertOptionalFieldsDefaultValues(res.body);
+        assertOptionalFieldsValues(res.body, {});
         assertAddedFieldsExistWithTypes(res.body);
         done();
       });
@@ -107,11 +107,12 @@ suite('Functional Tests', function() {
         .get(`/api/issues/${project2}`)
         .end((err, res) => {
           assert.isArray(res.body);
+          testIssuesInDB = res.body;
           assert.equal(res.body.length, testIssues.length);
           testIssues.forEach((issue, index) => {
             assertAllFieldsMatchObj(res.body[index], issue);
+            assertOptionalFieldsValues(res.body[index], issue);
           });
-          testIssuesInDB = res.body;
           resolve();
         });
     });

@@ -2,6 +2,13 @@
 
 const { ObjectId } = require('mongodb');
 
+function addOptionalFields(issue) {
+  const output = issue;
+  if (!issue.assigned_to) output.assigned_to = '';
+  if (!issue.status_text) output.status_text = '';
+  return output;
+}
+
 module.exports = function apiRoutes(app, issues) {
 
   app.route('/api/issues/:project')
@@ -24,7 +31,9 @@ module.exports = function apiRoutes(app, issues) {
 
       const data = await issues.find(selector);
 
-      res.json(await data.toArray());
+      const output = (await data.toArray()).map((issue) => addOptionalFields(issue));
+
+      res.json(output);
     })
     
     .post(async function (req, res){
@@ -40,10 +49,7 @@ module.exports = function apiRoutes(app, issues) {
 
       await issues.insertOne({ ...issue, project });
 
-      if (!issue.assigned_to) issue.assigned_to = '';
-      if (!issue.status_text) issue.status_text = '';
-
-      res.json(issue);
+      res.json(addOptionalFields(issue));
     })
     
     .put(async function (req, res){
