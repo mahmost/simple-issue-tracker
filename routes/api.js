@@ -31,7 +31,7 @@ module.exports = function apiRoutes(app, issues) {
       const project = req.params.project;
       const issue = req.body;
 
-      if (!issue.issue_title || !issue.issue_text || !issue.created_by) return res.status(400).json({ error: 'required field(s) missing' });
+      if (!issue.issue_title || !issue.issue_text || !issue.created_by) return res.json({ error: 'required field(s) missing' });
 
       issue._id = (new ObjectId).toString();
       issue.created_on = (new Date).toISOString();
